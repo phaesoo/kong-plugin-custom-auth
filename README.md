@@ -14,3 +14,6 @@ Install kong-pongo: https://github.com/Kong/kong-pongo#installation
 ```bash
 make test
 ```
+
+# Deployment
+kubectl -n kong apply -f plugin_configmap.yaml
