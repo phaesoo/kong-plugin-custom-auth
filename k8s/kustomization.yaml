@@ -1,0 +1,4 @@
+resources:
+- https://github.com/kong/kubernetes-ingress-controller/deploy/manifests/base
+patchesStrategicMerge:
+- custom-plugin.yaml

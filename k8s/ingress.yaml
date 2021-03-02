@@ -1,0 +1,27 @@
+# This is a sample ingress configuration for deploying custom plugin `custom-auth`
+# into kong for kubernetes.
+# This configurations will patches predefined kong configuration.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-kong
+  namespace: kong
+spec:
+  template:
+    spec:
+      containers:
+      - name: proxy
+        env:
+        - name: KONG_PLUGINS
+          value: bundled,custom-auth
+        - name: KONG_LUA_PACKAGE_PATH
+          value: "/opt/?.lua;;"
+        - name: KONG_LOG_LEVEL
+          value: debug
+        volumeMounts:
+        - name: kong-plugin-custom-auth
+          mountPath: /opt/kong/plugins/custom-auth
+      volumes:
+      - name: kong-plugin-custom-auth
+        configMap:
+          name: kong-plugin-custom-auth
