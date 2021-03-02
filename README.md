@@ -1,7 +1,9 @@
 # kong-plugin-custom-auth
 
 # Generate configmap
-> ./generate_configmap.sh
+```
+make configmap
+```
 
 # Testing
 
@@ -9,7 +11,6 @@
 Install kong-pongo: https://github.com/Kong/kong-pongo#installation
 
 ## Run unit test
-> pongo run ./spec/unit
-
-## Run integration test
-> pongo run ./spec/integration
+```bash
+make test
+```

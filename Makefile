@@ -10,6 +10,6 @@ test:
 	pongo down
 
 # Run all unit tests
-.PHONY: generate
-generate: 
+.PHONY: configmap
+configmap: 
 	./generate_configmap.sh
