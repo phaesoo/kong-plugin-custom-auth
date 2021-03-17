@@ -8,21 +8,7 @@ local TokenHandler = {
 
 function TokenHandler:access(conf)
   kong.log.inspect(conf)
-
-  local jwt_token = kong.request.get_header(conf.token_header)
-  if not jwt_token then
-    kong.log.debug("Token not found in header")
-    kong.response.exit(401)
-  end
-
-  local token_type = jwt_token:sub(0,7)
-  if token_type ~= "Bearer " then
-    kong.log.debug("Invalid token type: ", token_type)
-    kong.response.exit(401)
-  end
   
-  kong.log.debug(conf.auth_host, conf.auth_port)
-
   local httpc = http.new()
   httpc:connect(conf.auth_host, conf.auth_port)
   
@@ -34,8 +20,9 @@ function TokenHandler:access(conf)
       [conf.token_header] = jwt_token
     },
     body = json.encode({
-      path = kong.request.get_path(),
-      raw_query = kong.request.get_raw_query(),
+      method = kong.request.get_method(),
+      urlPath = kong.request.get_path(),
+      queryString = kong.request.get_raw_query(),
     }),
   })
 
@@ -45,8 +32,13 @@ function TokenHandler:access(conf)
   end
 
   if res.status ~= 200 then
-    kong.log.debug("Authentication failed", res.status)
-    return kong.response.exit(401) -- unauthorized
+    if res.status == 401 then
+      kong.log.debug("Authentication failed", res.status)
+      return kong.response.exit(401) -- unauthorized
+    else
+      kong.log.debug("Internal server error", res.status)
+      return kong.response.exit(500)
+    end
   end
 end
 

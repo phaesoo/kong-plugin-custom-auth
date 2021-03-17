@@ -15,14 +15,12 @@ local schema = {
           {
             auth_host = {
               type = "string",
-              default = "testapi.testapi",
               required = true,
             },
           },
           {
             auth_port = {
               type = "integer",
-              default = 8080,
               required = true,
             },
           },
