@@ -1,0 +1,71 @@
+apiVersion: v1
+data:
+  handler.lua: "local http = require \"resty.http\"\nlocal json = require \"cjson\"\n\nlocal
+    TokenHandler = {\n  PRIORITY = 1000,\n  VERSION = \"0.1\",\n}\n\nfunction TokenHandler:access(conf)\n
+    \ kong.log.inspect(conf)\n\n  local jwt_token = kong.request.get_header(conf.token_header)\n
+    \ local headers = {\n    [\"Content-Type\"] = \"application/json\",\n  }\n  if
+    jwt_token then\n    headers[conf.token_header] = jwt_token\n  end\n  \n  local
+    httpc = http.new()\n  httpc:connect(conf.auth_host, conf.auth_port)\n  \n  local
+    res, err = httpc:request({\n    method = \"POST\",\n    path = conf.auth_urlpath,\n
+    \   headers = headers,\n    body = json.encode({\n      method = kong.request.get_method(),\n
+    \     urlPath = kong.request.get_path(),\n      queryString = kong.request.get_raw_query(),\n
+    \   }),\n  })\n\n  if not res then\n    kong.log.err(\"Failed to call auth_endpoint:\",
+    err)\n    return kong.response.exit(500)\n  end\n\n  if res.status ~= 200 then\n
+    \   if res.status == 401 then\n      kong.log.debug(\"Authentication failed\",
+    res.status)\n      return kong.response.exit(401) -- unauthorized\n    else\n
+    \     kong.log.debug(\"Internal server error\", res.status)\n      return kong.response.exit(500)\n
+    \   end\n  end\nend\n\nreturn TokenHandler\n"
+  schema.lua: |
+    local typedefs = require "kong.db.schema.typedefs"
+
+    -- Grab pluginname from module name
+    local plugin_name = ({...})[1]:match("^kong%.plugins%.([^%.]+)")
+
+    local schema = {
+      name = plugin_name,
+      fields = {
+        -- the 'fields' array is the top-level entry with fields defined by Kong
+        { protocols = typedefs.protocols_http },
+        { config = {
+            -- The 'config' record is the custom part of the plugin schema
+            type = "record",
+            fields = {
+              {
+                auth_host = {
+                  type = "string",
+                  required = true,
+                },
+              },
+              {
+                auth_port = {
+                  type = "integer",
+                  required = true,
+                },
+              },
+              {
+                auth_urlpath = {
+                  type = "string",
+                  default = "/apikey/verify",
+                  required = true,
+                },
+              },
+              {
+                token_header = typedefs.header_name {
+                  default = "Authorization",
+                  required = true
+                },
+              }
+            },
+            entity_checks = {
+            },
+          },
+        },
+      },
+    }
+
+    return schema
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: kong-plugin-custom-auth
+  namespace: kong

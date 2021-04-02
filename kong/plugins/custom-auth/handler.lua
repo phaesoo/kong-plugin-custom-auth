@@ -8,6 +8,14 @@ local TokenHandler = {
 
 function TokenHandler:access(conf)
   kong.log.inspect(conf)
+
+  local jwt_token = kong.request.get_header(conf.token_header)
+  local headers = {
+    ["Content-Type"] = "application/json",
+  }
+  if jwt_token then
+    headers[conf.token_header] = jwt_token
+  end
   
   local httpc = http.new()
   httpc:connect(conf.auth_host, conf.auth_port)
@@ -15,11 +23,9 @@ function TokenHandler:access(conf)
   local res, err = httpc:request({
     method = "POST",
     path = conf.auth_urlpath,
-    headers = {
-      ["Content-Type"] = "application/json",
-      [conf.token_header] = jwt_token
-    },
+    headers = headers,
     body = json.encode({
+      clientIP = kong.client.get_ip(),
       method = kong.request.get_method(),
       urlPath = kong.request.get_path(),
       queryString = kong.request.get_raw_query(),
