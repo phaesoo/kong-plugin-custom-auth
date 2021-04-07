@@ -38,11 +38,10 @@ function TokenHandler:access(conf)
   end
 
   if res.status ~= 200 then
-    if res.status == 401 then
-      kong.log.debug("Authentication failed", res.status)
-      return kong.response.exit(401) -- unauthorized
+    if res.status ~= 500 then
+      return kong.response.exit(res.status)
     else
-      kong.log.debug("Internal server error", res.status)
+      kong.log.err("Internal server error", res.status)
       return kong.response.exit(500)
     end
   end
