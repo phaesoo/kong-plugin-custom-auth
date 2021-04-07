@@ -38,12 +38,10 @@ function TokenHandler:access(conf)
   end
 
   if res.status ~= 200 then
-    if res.status ~= 500 then
-      return kong.response.exit(res.status)
-    else
+    if res.status == 500 then
       kong.log.err("Internal server error", res.status)
-      return kong.response.exit(500)
     end
+    return kong.response.exit(res.status)
   end
 end
 
